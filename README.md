@@ -3,9 +3,13 @@
 This is a implentment SSD program. You can train myself datasets.
 
 ### Finsh 
-[x]SSD 300
-[x]VGG16 
-[x]Tensorflow lite version
+-[x] SSD 300
+-[x] VGG16 
+-[x] Tensorflow lite version
+-[ ] SSD 512
+-[ ] Mobilenet v1
+-[ ] Mobilenet v2
+-[ ] Mobilenet v3
 
 ```
 Tensorflow verion: 2.2.0
