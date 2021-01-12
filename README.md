@@ -3,9 +3,9 @@
 This is a implentment SSD program. You can train myself datasets.
 
 ### Finsh 
-[x] SSD 300
-[x] VGG16 
-[x] Tensorflow lite version
+[x]SSD 300
+[x]VGG16 
+[x]Tensorflow lite version
 
 ```
 Tensorflow verion: 2.2.0
