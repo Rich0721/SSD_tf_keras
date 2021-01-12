@@ -1,10 +1,16 @@
+from numpy.lib.function_base import append, flip
+import tensorflow as tf
+from tensorflow.keras.layers import Layer, InputSpec
+from tensorflow.keras import backend as K
 import numpy as np
+from tensorflow.python.keras.backend import var
+from tensorflow.python.keras.engine.input_layer import Input
 
 
-class AnchorBoxes:
-
+class AnchorBoxes(Layer):
+    
     def __init__(self,  img_size, min_size, max_size=None, aspect_ratios=None,
-                 flip=True, variances=[0.1],**kwargs):
+                 flip=True, clip=True,variances=[0.1],**kwargs):
 
         self.img_size = img_size
         self.min_size = min_size
@@ -21,18 +27,31 @@ class AnchorBoxes:
                 self.aspect_ratios.append(ar)
                 if flip:
                     self.aspect_ratios.append(1.0 / ar)
-        
         self.flip = flip
         self.variances = np.array(variances)
+        self.clip = clip
+        super(AnchorBoxes, self).__init__(**kwargs)
+    
+    def build(self, input_shape):
+        self.input_spec = [InputSpec(shape=input_shape)]
+        super(AnchorBoxes, self).build(input_shape)
     
     def call(self, x, mask=None):
         
+        if hasattr(x, '_keras_shape'):
+            input_shape = x._keras_shape
+        elif hasattr(K, 'int_shape'):
+            if isinstance(x, list):
+                input_shape = K.int_shape(x[0])
+            else:
+                input_shape = K.int_shape(x)
+
+        feature_map_width = input_shape[2]
+        feature_map_height = input_shape[1]
         img_width = self.img_size[1]
         img_height = self.img_size[0]
         box_heights = []
-        box_widths = []
-        feature_map_height = x[0]
-        feature_map_width = x[1]
+        box_widths = []    
 
         for ar in self.aspect_ratios:
             if ar == 1 and len(box_widths) == 0:
@@ -51,12 +70,10 @@ class AnchorBoxes:
         # Compute the grid of box center points. They are identical for all aspect ratios.
 
         # Compute the step sizes, i.e. how far apart the anchor box center points will be vertically and horizontally.
-        
         step_height = img_height / feature_map_height
         step_width = img_width / feature_map_width
         
-        #line_x = np.linspace(offset_width * step_width, img_width - offset_width * step_width, feature_map_width)
-        #line_y = np.linspace(offset_height * offset_height, img_height - offset_height * step_height, feature_map_height)
+
         linx = np.linspace(0.5 * step_width, img_width - 0.5 *step_width,
                            feature_map_height)
         liny = np.linspace(0.5 * step_height, img_height - 0.5 * step_height,
@@ -69,7 +86,7 @@ class AnchorBoxes:
         num_priors = len(self.aspect_ratios)
         prior_boxes = np.concatenate((center_x, center_y), axis=1)
         prior_boxes = np.tile(prior_boxes, (1, 2 * num_priors))
-        #print(num_priors)
+        
         # Compute four corners
         prior_boxes[:, ::4] -= box_widths
         prior_boxes[:, 1::4] -= box_heights
@@ -92,48 +109,30 @@ class AnchorBoxes:
             raise Exception('Must provide one or four variances.')
 
         prior_boxes = np.concatenate((prior_boxes, variances), axis=1)
+        prior_boxes_tensor = K.expand_dims(tf.cast(prior_boxes, dtype=tf.float32), 0)
+    
+        pattern = [tf.shape(x)[0], 1, 1]
+        prior_boxes_tensor = tf.tile(prior_boxes_tensor, pattern)
 
-        return prior_boxes
-        
-def get_anchors_300(image_size=(300, 300)):
+        return prior_boxes_tensor
 
-    if image_size != (300, 300):
-        raise ValueError("This anchor need to used (300, 300).")
-
-    features_map_length = [38,19,10,5,3,1] 
-    anchors=[30, 60, 111, 162, 213, 264, 315]
-    variances = [0.1, 0.1, 0.2, 0.2]
+    def compute_output_shape(self, input_shape):
+        if K.image_data_format() == "channels_last":
+            batch_size, feature_map_height, feature_map_width, feature_map_channels = input_shape
+        else: # Not yet relevant since TensorFlow is the only supported backend right now, but it can't harm to have this in here for the future
+            batch_size, feature_map_channels, feature_map_height, feature_map_width = input_shape
+        return (batch_size, feature_map_height, feature_map_width, self.n_boxes, 8)
     
-    # Generate the anchor boxes. Output shape: (b, h, w, n_boxes, 8)
-    priors = AnchorBoxes(img_size=image_size, min_size=anchors[0], max_size=anchors[1],aspect_ratios=[2],
-                                             variances=variances)
-    conv4_3_norm_mbox_priorbox = priors.call((features_map_length[0],features_map_length[0]))
-    
-    priors = AnchorBoxes(img_size=image_size, min_size=anchors[1], max_size=anchors[2],aspect_ratios=[2, 3],
-                        variances=variances)
-    fc7_mbox_priorbox = priors.call((features_map_length[1],features_map_length[1]))
-    
-    priors = AnchorBoxes(img_size=image_size, min_size=anchors[2], max_size=anchors[3],aspect_ratios=[2, 3],
-                        variances=variances)
-    conv6_2_mbox_priorbox = priors.call((features_map_length[2],features_map_length[2]))
-    
-    priors = AnchorBoxes(img_size=image_size, min_size=anchors[3], max_size=anchors[4],aspect_ratios=[2, 3],
-                        variances=variances)
-    conv7_2_mbox_priorbox = priors.call((features_map_length[3],features_map_length[3]))
-    
-    priors = AnchorBoxes(img_size=image_size, min_size=anchors[4], max_size=anchors[5],aspect_ratios=[2],
-                        variances=variances)
-    conv8_2_mbox_priorbox = priors.call((features_map_length[4],features_map_length[4]))
-    
-    priors = AnchorBoxes(img_size=image_size, min_size=anchors[5], max_size=anchors[6],aspect_ratios=[2],
-                        variances=variances)
-    conv9_2_mbox_priorbox = priors.call((features_map_length[5],features_map_length[5]))
-    
-    mbox_priorbox = np.concatenate([conv4_3_norm_mbox_priorbox,
-                                    fc7_mbox_priorbox,
-                                    conv6_2_mbox_priorbox,
-                                    conv7_2_mbox_priorbox,
-                                    conv8_2_mbox_priorbox,
-                                    conv9_2_mbox_priorbox], axis=0)
-    
-    return mbox_priorbox
+    def get_config(self):
+       
+        config = {
+            'img_size': self.img_size,
+            'min_size': self.min_size,
+            'max_size': self.max_size,
+            'aspect_ratios': list(self.aspect_ratios),
+            'flip': self.flip,
+            'clip': self.clip,
+            'variances': list(self.variances)
+        }
+        base_config = super(AnchorBoxes, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
