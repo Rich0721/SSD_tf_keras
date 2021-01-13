@@ -1,4 +1,4 @@
-<<<<<<< Updated upstream:train_300.py
+
 from __future__ import annotations
 import tensorflow as tf
 import numpy as np
@@ -140,5 +140,4 @@ if __name__ == "__main__":
                         epochs=epochs,
                         initial_epoch=0,
                         callbacks=[checkpoint, reduce_lr])
->>>>>>> Stashed changes:train.py
     model.save(model_save_folder, save_format='tf')
