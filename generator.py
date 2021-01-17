@@ -72,7 +72,7 @@ class Generator:
         dx = int(rand(0, w - nw))
         dy = int(rand(0, h - nh))
         new_image = Image.new('RGB', (w, h), (128, 128, 128))
-        new_image.paste(image)
+        new_image.paste(image, (dx, dy))
         image = new_image
 
         flip = rand() < 0.5
@@ -149,3 +149,12 @@ class Generator:
                     inputs = []
                     targets = []
                     yield preprocess_input(tmp_inp), tmp_targets
+
+    def load_image_and_annotations(self, i):
+
+        line = self.val_lines[i].split()
+        image = cv2.imread(line[0])
+        image = cv2.resize(image, (self.image_size[1], self.image_size[1]))
+        image = image[:, :, ::-1] / 255
+        boxes = np.array([np.array(list(map(int, box.split(",")))) for box in line[1:]])
+        return image, boxes
