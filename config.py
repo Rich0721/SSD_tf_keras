@@ -10,11 +10,16 @@ class config:
     ANCHORS_SIZE_512 = [36, 77, 154, 230, 307, 384, 461, 538] # VOC SSD512
     #ANCHORS_SIZE_512 = [20, 51, 133, 215, 297, 379, 461, 542] # COCO
     VARIANCES = [0.1, 0.1, 0.2, 0.2]
-    
+
+    '''
     # VOC dataset classes   
     CLASSES =  ['background', 'airwaves-mint', 'eclipse-lemon', 'eclipse-mint', 'eclipse-mint-fudge',
            'extra-lemon', 'hallsxs-buleberry', 'hallsxs-lemon', 'meiji-blackchocolate', 'meiji-milkchocolate', 'rocher']
-    
+    '''
+    CLASSES = ['1402200300101', '1402300300101', '1402310200101', '1402312700101', '1402312900101', 
+        '1402324800101', '1422001900101', '1422111300101', '1422204600101', '1422206800101', '1422300300101', 
+        '1422301800101', '1422302000101', '1422308000101', '1422329600101', '1422503600101', '1422504400101', 
+        '1422505200101', '1422505600101', '1422593400101', '1422594600101']
     '''
     # COCO dataset classes
     CLASSES = ['background', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 
@@ -32,6 +37,10 @@ class config:
     DATASET = "../datasets/test"
     TRAIN_TEXT = "./train.txt"
     TEST_DATASET  = "../datasets/test_network"
+
+    COCO_JSON = ['instances_train2014.json', 'instances_val2014.json']
+    COCO_DATASER_FOLDER = "../datasets/coco_train2014/"
+    COCO_TRAIN_TEXT = ["./train.txt", "./val.txt"]
 
     CONFIDENCE = 0.5
     NMS_IOU = 0.45
