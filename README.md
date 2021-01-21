@@ -7,9 +7,9 @@ This is a implentment SSD program. You can train myself datasets.
 - [x] VGG16 
 - [x] Tensorflow lite version
 - [x] SSD 512
-- [ ] Mobilenet v1
-- [ ] Mobilenet v2
-- [ ] Mobilenet v3
+- [x] Mobilenet v1
+- [x] Mobilenet v2
+- [x] Mobilenet v3
 
 ```
 Tensorflow verion: 2.2.0
